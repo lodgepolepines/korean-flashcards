@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   basePath: isProd ? '/korean-flashcards' : '',
   output: 'export',
   env: {
-    NEXT_PUBLIC_API_URL: 'https://korean-flashcards.vercel.app/api'  // Make sure to add /api
+    NEXT_PUBLIC_API_URL: 'https://korean-flashcards.vercel.app'
   }
 };
 

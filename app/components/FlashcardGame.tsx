@@ -26,7 +26,7 @@ const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) 
         setIsLoading(true);
         
         try {
-            const response = await fetch('https://korean-flashcards.vercel.app/api/verify-password', {
+            const response = await fetch('https://korean-flashcards.vercel.app/verify-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
