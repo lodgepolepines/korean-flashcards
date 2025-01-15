@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         const isValid = inputHash === process.env.CORRECT_PASSWORD_HASH;
 
         return NextResponse.json({ success: isValid });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ success: false }, { status: 500 });
     }
 }
