@@ -6,8 +6,16 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, List } from 'lucide-react';
 
+// Or define it directly if you prefer:
+interface FlashCard {
+  word: string;
+  translation: string;
+  pinyin: string;
+  example: string;
+}
+
 interface VocabListProps {
-  cards: Array<any>; // Use your FlashcardWithStats type here
+  cards: Array<FlashCard>;
 }
 
 const VocabList = ({ cards }: VocabListProps) => {
