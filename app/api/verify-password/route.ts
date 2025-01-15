@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 // CORS configuration
-const ALLOWED_ORIGIN = 'https://lodgepolepines.github.io';
+const ALLOWED_ORIGIN = 'https://lodgepolepines.github.io/korean-flashcards';
 
 export async function OPTIONS() {
   return new NextResponse(null, {
