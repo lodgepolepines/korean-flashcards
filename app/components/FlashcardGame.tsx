@@ -5,35 +5,68 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, RotateCcw, Trophy, Sun, Moon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { flashcardsData } from '../data/flashcardData';
+import VocabList from './VocabList';
+import CardSideToggle from './CardSideToggle';
 
 const FlashcardGame = () => {
     // Function to shuffle array
     const shuffleArray = <T extends object>(array: T[]): (T & { score: number; attempts: number })[] => {
         const shuffled = [...array].sort(() => Math.random() - 0.5);
         return shuffled.map(card => ({ ...card, score: 0, attempts: 0 }));
-      };
+    };
       
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
-    const [cards, setCards] = useState(() => shuffleArray(flashcardsData)); // Initialize with shuffled cards
+    // Initialize with unshuffled cards first
+    const [cards, setCards] = useState(() => 
+      flashcardsData.map(card => ({ ...card, score: 0, attempts: 0 }))
+    );
     const [showScore, setShowScore] = useState(false);
     const [totalScore, setTotalScore] = useState(0);
     const [mastered, setMastered] = useState(0);
-    const [theme, setTheme] = useState('dark');
+    const [theme, setTheme] = useState('light'); // Start with light theme for SSR
+    const [isClient, setIsClient] = useState(false);
     const [cardsStudied, setCardsStudied] = useState(new Set());
-
-  // Initialize theme from system preference
-  useEffect(() => {
-    if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      };
-    if (typeof window !== 'undefined') {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark');
-        document.documentElement.classList.add('dark');
+    const [showEnglishFirst, setShowEnglishFirst] = useState<boolean>(() => {
+      // Only access localStorage after mount
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('showEnglishFirst');
+        return saved ? JSON.parse(saved) : false;
       }
+      return false;
+    });
+
+  useEffect(() => {
+    setIsClient(true);
+    // Shuffle cards
+    setCards(shuffleArray(flashcardsData));
+    
+    // Check system theme preference
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (isDarkMode) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    }
+  
+    // Load card side preference
+    const savedSide = localStorage.getItem('showEnglishFirst');
+    if (savedSide) {
+      setShowEnglishFirst(JSON.parse(savedSide));
     }
   }, []);
+  
+  // Add this effect to save the preference
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('showEnglishFirst', JSON.stringify(showEnglishFirst));
+    }
+  }, [showEnglishFirst, isClient]);
+
+  // Add the handler
+  const handleToggleSide = (value: boolean) => {
+    setShowEnglishFirst(value);
+    setIsFlipped(value); // Reset current card to match preference
+  };
 
   const toggleTheme = () => {
     setTheme(prevTheme => {
@@ -47,6 +80,7 @@ const FlashcardGame = () => {
     });
   };
 
+  // Rest of the component code remains the same
   const shuffleCards = () => {
     setCards(shuffleArray(flashcardsData));
     setCurrentCardIndex(0);
@@ -101,6 +135,19 @@ const FlashcardGame = () => {
 
   const progressPercentage = (cardsStudied.size / cards.length) * 100;
 
+  // Optional: Show a loading state before client-side hydration
+  if (!isClient) {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto p-4">
+        <Card className="w-full aspect-[3/2] max-h-80">
+          <CardContent className="h-full flex items-center justify-center p-4">
+            <div className="text-2xl font-bold">Loading...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto p-4 dark:bg-gray-900 dark:text-white transition-colors duration-200">
       {/* Theme Toggle */}
@@ -112,6 +159,21 @@ const FlashcardGame = () => {
       >
         {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
       </Button>
+
+      <div className="w-full flex justify-between items-center">
+      <CardSideToggle 
+        showEnglishFirst={showEnglishFirst} 
+        onToggle={handleToggleSide}
+      />
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleTheme}
+        className="dark:border-gray-700"
+      >
+        {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      </Button>
+      </div>
 
       {/* Progress Section */}
       <div className="w-full space-y-3">
@@ -160,7 +222,7 @@ const FlashcardGame = () => {
           <CardContent className="h-full flex items-center justify-center p-4 sm:p-6 text-center">
             {!isFlipped ? (
               <div className="text-2xl sm:text-3xl font-bold dark:text-white">
-                {cards[currentCardIndex].word}
+                {showEnglishFirst ? cards[currentCardIndex].translation : cards[currentCardIndex].word}
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
@@ -168,7 +230,7 @@ const FlashcardGame = () => {
                   {cards[currentCardIndex].pinyin}
                 </p>
                 <p className="text-base sm:text-lg font-medium dark:text-gray-200">
-                  {cards[currentCardIndex].translation}
+                  {showEnglishFirst ? cards[currentCardIndex].word : cards[currentCardIndex].translation}
                 </p>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   {cards[currentCardIndex].example}
@@ -231,6 +293,7 @@ const FlashcardGame = () => {
           </div>
         )}
       </div>
+      <VocabList cards={cards} />
     </div>
   );
 };
