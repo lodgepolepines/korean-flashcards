@@ -42,7 +42,7 @@ const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) 
                 setError(true);
                 setTimeout(() => setError(false), 2000);
             }
-        } catch (_err) {  // Adding underscore prefix to indicate intentionally unused
+        } catch { 
             setError(true);
             setTimeout(() => setError(false), 2000);
         } finally {
