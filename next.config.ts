@@ -9,8 +9,8 @@ const nextConfig: NextConfig = {
     unoptimized: true, // Disable default image optimization
   },  
   // Configure basePath for GitHub Pages
-  basePath: process.env.GITHUB_PAGES ? '/korean-flashcards' : '',
-  assetPrefix: process.env.GITHUB_PAGES ? '/korean-flashcards/' : '',
+  assetPrefix: isProd ? '/korean-flashcards/' : '',
+  basePath: isProd ? '/korean-flashcards' : '',
 };
 
 module.exports = nextConfig;
