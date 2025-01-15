@@ -1,15 +1,12 @@
 {
   "name": "korean-flashcards",
   "version": "0.1.0",
-  "homepage": "https://lodgepolepines.github.io/korean-flashcards",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "lint": "next lint"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^5.8.0",
