@@ -16,33 +16,34 @@ interface FlashCard {
     example: string;
 }
 
-import crypto from 'crypto';
-
 const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
         try {
-            // Hash the input password
-            const inputHash = crypto
-                .createHash('sha256')
-                .update(password)
-                .digest('hex');
+            const response = await fetch('https://korean-flashcards.vercel.app/api/verify-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password }),
+            });
+
+            const data = await response.json();
             
-            // Compare with stored hash
-            if (inputHash === process.env.CORRECT_PASSWORD_HASH) {
+            if (data.success) {
                 sessionStorage.setItem('isAuthenticated', 'true');
                 onCorrectPassword();
             } else {
                 setError(true);
                 setTimeout(() => setError(false), 2000);
             }
-        } catch { 
+        } catch {
             setError(true);
             setTimeout(() => setError(false), 2000);
         } finally {
@@ -50,7 +51,6 @@ const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) 
         }
     };
 
-    // Rest of your PasswordGate component remains the same
     return (
         <div className="flex items-center justify-center w-full min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-slate-900">
             <Card className="w-full max-w-md mx-4">
