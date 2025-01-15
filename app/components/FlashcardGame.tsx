@@ -21,22 +21,26 @@ const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) 
     const [error, setError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Replace this with your pre-computed hash
+    const CORRECT_HASH = "d5195dceb1b1c2ac4ff7f2e83ac1a6f3f5a5f24370bf3c35c371ead8e5f40a8a";
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
         try {
-            const response = await fetch('https://korean-flashcards.vercel.app/verify-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ password }),
-            });
-
-            const data = await response.json();
+            // Convert the password string to bytes
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
             
-            if (data.success) {
+            // Hash the password using browser's crypto API
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            
+            // Convert the hash to hex string
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            if (hashHex === CORRECT_HASH) {
                 sessionStorage.setItem('isAuthenticated', 'true');
                 onCorrectPassword();
             } else {
@@ -82,56 +86,55 @@ const PasswordGate = ({ onCorrectPassword }: { onCorrectPassword: () => void }) 
 };
 
 const SpeakButton = ({ text }: { text: string }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  
-  // Use environment variable for API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const [isPlaying, setIsPlaying] = useState(false);
 
-  const speak = async () => {
-      try {
-          setIsPlaying(true);
-          const response = await fetch(`${API_URL}/api/tts`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ text }),
-          });
+    const speak = async () => {
+        try {
+            setIsPlaying(true);
+            const response = await fetch('https://korean-tts-proxy.iamtimzhu.workers.dev', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text }),
+            });
 
-          if (!response.ok) {
-              throw new Error('Failed to generate speech');
-          }
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('TTS Error:', errorText);
+                throw new Error('Failed to generate speech');
+            }
 
-          const audioBlob = await response.blob();
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-          
-          audio.onended = () => {
-              setIsPlaying(false);
-              URL.revokeObjectURL(audioUrl);
-          };
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            
+            audio.onended = () => {
+                setIsPlaying(false);
+                URL.revokeObjectURL(audioUrl);
+            };
 
-          await audio.play();
-      } catch (error) {
-          console.error('Speech error:', error);
-          setIsPlaying(false);
-      }
-  };
+            await audio.play();
+        } catch (error) {
+            console.error('Speech error:', error);
+            setIsPlaying(false);
+        }
+    };
 
-  return (
-      <Button
-          variant="outline"
-          size="icon"
-          onClick={(e) => {
-              e.stopPropagation();
-              if (!isPlaying) speak();
-          }}
-          disabled={isPlaying}
-          className="absolute top-4 right-4 bg-white/80 dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-700"
-      >
-          <Volume2 className={`h-4 w-4 ${isPlaying ? 'text-blue-500' : ''}`} />
-      </Button>
-  );
+    return (
+        <Button
+            variant="outline"
+            size="icon"
+            onClick={(e) => {
+                e.stopPropagation();
+                if (!isPlaying) speak();
+            }}
+            disabled={isPlaying}
+            className="absolute top-4 right-4 bg-white/80 dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+            <Volume2 className={`h-4 w-4 ${isPlaying ? 'text-blue-500' : ''}`} />
+        </Button>
+    );
 };
 
 const FlashcardGame = () => {
